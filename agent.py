@@ -1,5 +1,12 @@
+import math
+import random
+
 from gameobjects import GameObject
 from move import Move
+
+
+def get_manhatten_distance(pos1, pos2):
+    return abs(pos1[0] - pos2[0]) + abs(pos1[1] - pos2[1])
 
 
 class Agent:
@@ -19,7 +26,7 @@ class Agent:
         the boundaries of the array)
 
         :param score: The current score as an integer. Whenever the snake eats, the score will be increased by one.
-        When the snake tragically dies (i.e. by running its head into a wall) the score will be reset. In ohter
+        When the snake tragically dies (i.e. by running its head into a wall) the score will be reset. In other
         words, the score describes the score of the current (alive) worm.
 
         :param turns_alive: The number of turns (as integer) the current snake is alive.
@@ -39,7 +46,24 @@ class Agent:
         move left is made, the snake will go one block to the left and change its direction to west.
         """
 
-        return Move.STRAIGHT
+        # calculate heuristic values
+
+
+
+        # create route
+
+        # save route
+
+        # perform route
+
+
+        x = random.randint(1,3)
+        if (x==1):
+            return Move.STRAIGHT
+        elif (x==2):
+            return Move.RIGHT
+        else:
+            return Move.LEFT
 
     def on_die(self):
         """This function will be called whenever the snake dies. After its dead the snake will be reincarnated into a
