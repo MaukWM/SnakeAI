@@ -1,8 +1,11 @@
 import math
 import random
+import copy
+
+import numpy as np
 
 from gameobjects import GameObject
-from move import Move
+from move import Move, Direction
 
 
 def get_manhattan_distance(pos1, pos2):
@@ -10,6 +13,11 @@ def get_manhattan_distance(pos1, pos2):
 
 
 class Agent:
+
+    current_score = 0
+    scores = []
+    visited_nodes = []
+
     def get_move(self, board, score, turns_alive, turns_to_starve, direction):
         """This function behaves as the 'brain' of the snake. You only need to change the code in this function for
         the project. Every turn the agent needs to return a move. This move will be executed by the snake. If this
@@ -46,10 +54,132 @@ class Agent:
         move left is made, the snake will go one block to the left and change its direction to west.
         """
 
-        # calculate heuristic values
+        if score > self.current_score:
+            self.visited_nodes = []
+
+        self.current_score = score
+
+        heuristic = []
+        for x in range(len(board)):
+            heuristic.append([])
+            for y in range(len(board[x])):
+                heuristic[x].append(0)
+
+        food = []
+        snek = (0,0)
+
+        # find snek
         for x in range(len(board)):
             for y in range(len(board[x])):
-                print(x,y)
+                if board[x][y] == GameObject.SNAKE_HEAD:
+                    snek = (x,y)
+
+        self.visited_nodes.append(snek)
+
+        # find food
+        for x in range(len(board)):
+            for y in range(len(board[x])):
+                if board[x][y] == GameObject.FOOD:
+                    food.append((x,y,get_manhattan_distance(snek, (x,y))))
+
+        best_food = math.inf
+        best_food_coordinate = (0,0)
+        for x in range(len(food)):
+            if food[x][2] < best_food:
+                best_food = food[x][2]
+                best_food_coordinate = (food[x][0], food[x][1])
+
+        # calculate heuristic values to closest food
+        for x in range(len(heuristic)):
+            for y in range(len(heuristic[x])):
+                heuristic[x][y] = 1 + get_manhattan_distance((x,y), best_food_coordinate)
+
+        # print(board)
+
+        best_move_value = math.inf
+        best_move = Move.STRAIGHT
+        if (direction == Direction.NORTH):
+            # Move.LEFT
+            if snek[0] != 0:
+                if (snek[0]-1, snek[1]) not in self.visited_nodes:
+                    if (heuristic[snek[0]-1][snek[1]] < best_move_value) and (board[snek[0]-1][snek[1]] is not GameObject.SNAKE_BODY) and (board[snek[0]-1][snek[1]] is not GameObject.WALL):
+                        best_move_value = heuristic[snek[0]-1][snek[1]]
+                        best_move = Move.LEFT
+            # Move.STRAIGHT
+            if snek[1] != 0:
+                if (snek[0], snek[1]-1) not in self.visited_nodes:
+                    if (heuristic[snek[0]][snek[1]-1] < best_move_value) and (board[snek[0]][snek[1]-1] is not GameObject.SNAKE_BODY) and (board[snek[0]][snek[1]-1] is not GameObject.WALL):
+                        best_move_value = heuristic[snek[0]][snek[1]-1]
+                        best_move = Move.STRAIGHT
+            # Move.RIGHT
+            if snek[0] != 24:
+                if (snek[0]+1, snek[1]) not in self.visited_nodes:
+                    if (heuristic[snek[0]+1][snek[1]] < best_move_value) and (board[snek[0]+1][snek[1]] is not GameObject.SNAKE_BODY) and (board[snek[0]+1][snek[1]] is not GameObject.WALL):
+                        best_move_value = heuristic[snek[0]+1][snek[1]]
+                        best_move = Move.RIGHT
+
+        elif (direction == Direction.SOUTH):
+            # Move.LEFT
+            if snek[0] != 24:
+                if (snek[0]+1, snek[1]) not in self.visited_nodes:
+                    if (heuristic[snek[0]+1][snek[1]] < best_move_value) and (board[snek[0]+1][snek[1]] is not GameObject.SNAKE_BODY) and (board[snek[0]+1][snek[1]] is not GameObject.WALL):
+                        best_move_value = heuristic[snek[0]+1][snek[1]]
+                        best_move = Move.LEFT
+            # Move.STRAIGHT
+            if snek[1] != 24:
+                if (snek[0], snek[1] + 1) not in self.visited_nodes:
+                    if (heuristic[snek[0]][snek[1]+1] < best_move_value) and (board[snek[0]][snek[1]+1] is not GameObject.SNAKE_BODY) and (board[snek[0]][snek[1]+1] is not GameObject.WALL):
+                        best_move_value = heuristic[snek[0]][snek[1]+1]
+                        best_move = Move.STRAIGHT
+            # Move.RIGHT
+            if snek[0] != 0:
+                if (snek[0]-1, snek[1]) not in self.visited_nodes:
+                    if (heuristic[snek[0]-1][snek[1]] < best_move_value) and (board[snek[0]-1][snek[1]] is not GameObject.SNAKE_BODY) and (board[snek[0]-1][snek[1]] is not GameObject.WALL):
+                        best_move_value = heuristic[snek[0]-1][snek[1]]
+                        best_move = Move.RIGHT
+
+        elif (direction == Direction.WEST):
+            # Move.LEFT
+            if snek[1] != 24:
+                if (snek[0], snek[1]+1) not in self.visited_nodes:
+                    if (heuristic[snek[0]][snek[1]+1] < best_move_value) and (board[snek[0]][snek[1]+1] is not GameObject.SNAKE_BODY) and (board[snek[0]][snek[1]+1] is not GameObject.WALL):
+                        best_move_value = heuristic[snek[0]][snek[1]+1]
+                        best_move = Move.LEFT
+            # Move.STRAIGHT
+            if snek[0] != 0:
+                if (snek[0]-1, snek[1]) not in self.visited_nodes:
+                    if (heuristic[snek[0]-1][snek[1]] < best_move_value) and (board[snek[0]-1][snek[1]] is not GameObject.SNAKE_BODY) and (board[snek[0]-1][snek[1]] is not GameObject.WALL):
+                        best_move_value = heuristic[snek[0]-1][snek[1]]
+                        best_move = Move.STRAIGHT
+            # Move.RIGHT
+            if snek[1] != 0:
+                if (snek[0], snek[1] - 1) not in self.visited_nodes:
+                    if (heuristic[snek[0]][snek[1]-1] < best_move_value) and (board[snek[0]][snek[1]-1] is not GameObject.SNAKE_BODY) and (board[snek[0]][snek[1]-1] is not GameObject.WALL):
+                        best_move_value = heuristic[snek[0]][snek[1]-1]
+                        best_move = Move.RIGHT
+
+        elif (direction == Direction.EAST):
+            # Move.LEFT
+            if snek[1] != 0:
+                if (snek[0], snek[1] - 1) not in self.visited_nodes:
+                    if (heuristic[snek[0]][snek[1]-1] < best_move_value) and (board[snek[0]][snek[1]-1] is not GameObject.SNAKE_BODY) and (board[snek[0]][snek[1]-1] is not GameObject.WALL):
+                        best_move_value = heuristic[snek[0]][snek[1]-1]
+                        best_move = Move.LEFT
+            # Move.STRAIGHT
+            if snek[0] != 24:
+                if (snek[0]+1, snek[1]) not in self.visited_nodes:
+                    if (heuristic[snek[0]+1][snek[1]] < best_move_value) and (board[snek[0]+1][snek[1]] is not GameObject.SNAKE_BODY) and (board[snek[0]+1][snek[1]] is not GameObject.WALL):
+                        best_move_value = heuristic[snek[0]+1][snek[1]]
+                        best_move = Move.STRAIGHT
+            # Move.RIGHT
+            if snek[1] != 24:
+                if (snek[0], snek[1] + 1) not in self.visited_nodes:
+                    if (heuristic[snek[0]][snek[1]+1] < best_move_value) and (board[snek[0]][snek[1]+1] is not GameObject.SNAKE_BODY) and (board[snek[0]][snek[1]+1] is not GameObject.WALL):
+                        best_move_value = heuristic[snek[0]][snek[1]+1]
+                        best_move = Move.RIGHT
+
+        return best_move
+
 
 
 
@@ -60,13 +190,13 @@ class Agent:
         # perform route
 
 
-        x = random.randint(1,3)
-        if (x==1):
-            return Move.STRAIGHT
-        elif (x==2):
-            return Move.RIGHT
-        else:
-            return Move.LEFT
+        # x = random.randint(1,3)
+        # if (x==1):
+        #     return Move.STRAIGHT
+        # elif (x==2):
+        #     return Move.RIGHT
+        # else:
+        #     return Move.LEFT
 
     def on_die(self):
         """This function will be called whenever the snake dies. After its dead the snake will be reincarnated into a
@@ -74,4 +204,9 @@ class Agent:
         it will be called for a fresh snake. Use this function to clean up variables specific to the life of a single
         snake or to host a funeral.
         """
+        self.scores.append(self.current_score)
+
+        print(self.scores)
+        print("average: ", np.average(self.scores))
+
         pass
