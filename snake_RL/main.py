@@ -6,22 +6,22 @@ from board import Board
 root = None
 canvas = None
 scale = None
-canvas_width = 800
-canvas_height = 800
+canvas_width = 400
+canvas_height = 400
 
 tics_per_second = 4
 previous_text_drawn = False
 
 """ BEGIN GAME SETTINGS """
-# Board width and height
-board_width = 25
-board_height = 25
+# Board width and height, 5x5 for RL
+board_width = 5
+board_height = 5
 # Maximum number of food blocks on the board
 food_blocks_max = 1
 # Maximum number of wall blocks on the board
 wall_blocks_max = 1
 # Indicates whether the test setup need to be used, turn to false to use the wall_blocks_max for spawning random walls
-test_config = True
+test_config = False
 # Number of turns to starve, -1 for disabled
 starvation_tics = -1
 # indicates whether when not redrawing the board, the score should be printed to the console.
