@@ -5,7 +5,7 @@ from gameobjects import GameObject
 from move import Move
 
 
-def get_manhatten_distance(pos1, pos2):
+def get_manhattan_distance(pos1, pos2):
     return abs(pos1[0] - pos2[0]) + abs(pos1[1] - pos2[1])
 
 
@@ -47,6 +47,9 @@ class Agent:
         """
 
         # calculate heuristic values
+        for x in range(len(board)):
+            for y in range(len(board[x])):
+                print(x,y)
 
 
 
