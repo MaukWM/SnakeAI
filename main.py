@@ -1,12 +1,13 @@
 from tkinter import *
 from snake import Snake
 from board import Board
+import msvcrt
 
 root = None
 canvas = None
 scale = None
-canvas_width = 800
-canvas_height = 800
+canvas_width = 500
+canvas_height = 500
 
 tics_per_second = 4
 
@@ -29,8 +30,8 @@ snake = None
 board = None
 
 
-def callback():
-    update()
+def callback(input):
+    update(input)
 
 
 def main():
@@ -57,16 +58,17 @@ def main():
 def game_loop():
     global canvas, tics_per_second
     if tics_per_second > 0:
-        update()
+        input = msvcrt.getch()
+        update(input)
         canvas.after(int(1000 / tics_per_second), game_loop)
     else:
         canvas.after(int(1000), game_loop)
 
 
-def update():
+def update(input):
     global tics_per_second, board, snake, canvas
     # update gamestate
-    if snake.update(board):
+    if snake.update(board, input):
         snake.reset(board)
     # clear canvas
     canvas.delete("all")

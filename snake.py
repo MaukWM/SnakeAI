@@ -20,7 +20,7 @@ class Snake:
         self.max_tics_to_starve = max_tics_to_starve
         self.agent = Agent()
 
-    def update(self, board):
+    def update(self, board, input):
         if len(self.body_parts) > 0 and self.body_parts[0] != (self.x, self.y):
             self.body_parts = [(self.x, self.y)] + self.body_parts
             del self.body_parts[-1]
@@ -30,7 +30,7 @@ class Snake:
             return True
 
         # retrieve move from the agent
-        move = self.agent.get_move(board.get_copy(), self.score, self.tics_alive, self.tics_to_starve, self.direction)
+        move = self.agent.get_move(board.get_copy(), self.score, self.tics_alive, self.tics_to_starve, self.direction, input)
 
         # check return value of get_move
         if not (move == Move.RIGHT or move == Move.LEFT or move == Move.STRAIGHT):

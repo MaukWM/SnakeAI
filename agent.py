@@ -1,8 +1,10 @@
 import math
 import random
-
+import msvcrt
 from gameobjects import GameObject
-from move import Move
+from move import Move, Direction
+
+lastchar = 'w'
 
 
 def get_manhattan_distance(pos1, pos2):
@@ -10,7 +12,8 @@ def get_manhattan_distance(pos1, pos2):
 
 
 class Agent:
-    def get_move(self, board, score, turns_alive, turns_to_starve, direction):
+    def get_move(self, board, score, turns_alive, turns_to_starve, direction, input):
+        global lastchar
         """This function behaves as the 'brain' of the snake. You only need to change the code in this function for
         the project. Every turn the agent needs to return a move. This move will be executed by the snake. If this
         functions fails to return a valid return (see return), the snake will die (as this confuses its tiny brain
@@ -51,22 +54,55 @@ class Agent:
             for y in range(len(board[x])):
                 print(x,y)
 
-
-
         # create route
 
         # save route
 
         # perform route
 
-
-        x = random.randint(1,3)
-        if (x==1):
-            return Move.STRAIGHT
-        elif (x==2):
-            return Move.RIGHT
+        lastchar = input
+        if lastchar == 'w':
+            # GO UP
+            if direction == Direction.NORTH:
+                return Move.STRAIGHT
+            elif direction == Direction.EAST:
+                return Move.LEFT
+            elif direction == Direction.SOUTH:
+                return Move.STRAIGHT
+            else: # west
+                return Move.RIGHT
+        elif lastchar == 'a':
+            # GO LEFT
+            if direction == Direction.NORTH:
+                return Move.LEFT
+            elif direction == Direction.EAST:
+                return Move.STRAIGHT
+            elif direction == Direction.SOUTH:
+                return Move.RIGHT
+            else: # west
+                return Move.STRAIGHT
+        elif lastchar == 's':
+            #GO DOWN
+            if direction == Direction.NORTH:
+                return Move.STRAIGHT
+            elif direction == Direction.EAST:
+                return Move.RIGHT
+            elif direction == Direction.SOUTH:
+                return Move.STRAIGHT
+            else: # west
+                return Move.LEFT
+        elif lastchar == 'd':
+            # GO RIGHT
+            if direction == Direction.NORTH:
+                return Move.RIGHT
+            elif direction == Direction.EAST:
+                return Move.STRAIGHT
+            elif direction == Direction.SOUTH:
+                return Move.LEFT
+            else: # west
+                return Move.STRAIGHT
         else:
-            return Move.LEFT
+            return Move.STRAIGHT
 
     def on_die(self):
         """This function will be called whenever the snake dies. After its dead the snake will be reincarnated into a

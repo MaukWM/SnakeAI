@@ -2,14 +2,13 @@ from tkinter import *
 from snake import Snake
 from board import Board
 
-
 root = None
 canvas = None
 scale = None
-canvas_width = 400
-canvas_height = 400
+canvas_width = 300
+canvas_height = 300
 
-tics_per_second = 4
+tics_per_second = 1
 previous_text_drawn = False
 
 """ BEGIN GAME SETTINGS """

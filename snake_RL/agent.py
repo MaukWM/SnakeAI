@@ -4,14 +4,20 @@ import numpy
 # Internal reward model, initialise to 0 for all 25 spaces.
 model = [[0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0]]
 # Discount
-gamma = 1
+alpha = 0.8
 # Learning rate
-alpha = -0.04
+gamma = -0.04
+
+# internal game stuff
+foodposition = [0, 0]
+wallposition = [0, 0]
 
 # for initialising
 start = True
 score_internal = 0
+step = 0
 
+# [0,0] is top left
 
 class Agent:
 
@@ -19,131 +25,154 @@ class Agent:
         """" Constructor of the Agent, can be used to set up variables """
 
     def find_game_elements(self, board):
+        global foodposition
+        global wallposition
         for x in range(0, 5):
             for y in range(0, 5):
-                if board[x][y] == GameObject.FOOD:
-                    model[x][y] = 1
-                    print("[AGENT]: found FOOD at  x:" + str(x) + " y:" + str(y))
-                elif board[x][y] == GameObject.WALL:
-                    model[x][y] = -1
-                    print("[AGENT]: found WALL at  x:" + str(x) + " y:" + str(y))
-                else:
-                    print("[AGENT]: found nothing at  x:" + str(x) + " y:" + str(y))
-
-    def get_reward(self, state, coordinates):
-        if state == GameObject.FOOD:
-            # Food has a reward of 1
-            return 1
-        elif state == GameObject.WALL:
-            # Walls have a reward of -1
-            return -1
-        else:
-            # Empty space, return reward from model
-            return self.model[coordinates[0]][coordinates[1]]
+                if board[x][4 - y] == GameObject.FOOD:
+                    model[x][4 - y] = 1
+                #    print("[AGENT]: found FOOD at  x:" + str(x) + " y:" + str(4 - y))
+                    foodposition = [x, 4 - y]
+                elif board[x][4 - y] == GameObject.WALL:
+                    model[x][4 - y] = -1
+                #    print("[AGENT]: found WALL at  x:" + str(x) + " y:" + str(4 - y))
+                    wallposition = [x, 4 - y]
+                else: # empty space
+                #    print("[AGENT]: found nothing at  x:" + str(x) + " y:" + str(4 - y))
+                    pass
 
     def update_rewards(self):
+        global step
+        step = step + 1
+        global foodposition
+        global wallposition
         global model
         for x in range(0, 5):
             for y in range(0, 5):
-                # food and walls don't get updates.
-                if not model[x][y] == 1 and not model[x][y] == -1:
+                # food and walls get different updates.
+                if not [x, 4 - y] == foodposition and not [x, 4 - y] == wallposition:
                     # punishment for not being a final state
-                    model[x][y] = model[x][y] + alpha
+                    model[x][4 - y] = model[x][4 - y] + gamma
                     # bonus for being close to a nice neighbour
-                    neighbour_rewards = self.get_neighbour_rewards([x, y])
-                    model[x][y] = model[x][y] + gamma * max(neighbour_rewards[0], neighbour_rewards[1],
-                                                            neighbour_rewards[2], neighbour_rewards[3])
+                    neighbour_rewards = self.get_neighbour_rewards([x, 4 - y], False)
+                    if max(neighbour_rewards[0], neighbour_rewards[1], neighbour_rewards[2], neighbour_rewards[3]) > model[x][4 - y]:
+                        model[x][4 - y] = (model[x][4 - y] + alpha * max(neighbour_rewards[0], neighbour_rewards[1],
+                                                                         neighbour_rewards[2], neighbour_rewards[3])) / 2
 
-    def get_neighbour_rewards(self, pos):
+
+    def get_neighbour_rewards(self, pos, calledfornextmove):
+        pos = list(pos)
+        if calledfornextmove:
+            #print("position according to neighbour rewards: " + str(pos))
+            pass
         if 0 < pos[0] < 4:
             if 0 < pos[1] < 4:
                 # not at an edge or corner
-                return [model[pos[0] - 1][pos[1]],
+                return (model[pos[0] - 1][pos[1]],
                         model[pos[0] + 1][pos[1]],
-                        model[pos[0]][pos[1] - 1],
-                        model[pos[0]][pos[1] + 1]]
+                        model[pos[0]][pos[1] + 1],
+                        model[pos[0]][pos[1] - 1])
             elif pos[1] == 0:
-                # bottom edge
-                return [model[pos[0] - 1][pos[1]],
-                        model[pos[0] + 1][pos[1]],
-                        -1,
-                        model[pos[0]][pos[1] + 1]]
-            else:
                 # top edge
-                return [model[pos[0] - 1][pos[1]],
+                return (model[pos[0] - 1][pos[1]],
                         model[pos[0] + 1][pos[1]],
-                        model[pos[0]][pos[1] - 1],
-                        -1]
+                        model[pos[0]][pos[1] + 1],
+                        -1000)
+            else:
+                # bottom edge
+                return (model[pos[0] - 1][pos[1]],
+                        model[pos[0] + 1][pos[1]],
+                        -1000,
+                        -model[pos[0]][pos[1] - 1])
         elif pos[0] == 0:
             # left edge
             if pos[1] == 0:
-                # bottomleft corner
-                return [-1,
-                        model[pos[0] + 1][pos[1]],
-                        -1,
-                        model[pos[0]][pos[1] + 1]]
-            elif pos[1] == 4:
                 # topleft corner
-                return [-1,
+                return (-1000,
                         model[pos[0] + 1][pos[1]],
-                        model[pos[0]][pos[1] - 1],
-                        -1]
+                        model[pos[0]][pos[1] + 1],
+                        -1000)
+            elif pos[1] == 4:
+                # bottomleft corner
+                return (-1000,
+                        model[pos[0] + 1][pos[1]],
+                        -1000,
+                        model[pos[0]][pos[1] - 1])
             else:
                 # just the left edge here
-                return [-1,
+                return (-1000,
                         model[pos[0] + 1][pos[1]],
-                        model[pos[0]][pos[1] - 1],
-                        model[pos[0]][pos[1] + 1]]
+                        model[pos[0]][pos[1] + 1],
+                        model[pos[0]][pos[1] - 1])
         else:
             # right edge
             if pos[1] == 0:
-                # bottomright corner
-                return [model[pos[0] - 1][pos[1]],
-                        -1,
-                        -1,
-                        model[pos[0]][pos[1] + 1]]
-            elif pos[1] == 4:
                 # topright corner
-                return [model[pos[0] - 1][pos[1]],
-                        -1,
-                        model[pos[0]][pos[1] - 1],
-                        -1]
+                return (model[pos[0] - 1][pos[1]],
+                        -1000,
+                        model[pos[0]][pos[1] + 1],
+                        -1000)
+            elif pos[1] == 4:
+                # bottomright corner
+                return (model[pos[0] - 1][pos[1]],
+                        -1000,
+                        -1000,
+                        model[pos[0]][pos[1] - 1])
             else:
                 # just the right edge here
-                return [model[pos[0] - 1][pos[1]],
-                        -1,
-                        model[pos[0]][pos[1] - 1],
-                        model[pos[0]][pos[1] + 1]]
+                return (model[pos[0] - 1][pos[1]],
+                        -1000,
+                        model[pos[0]][pos[1] + 1],
+                        model[pos[0]][pos[1] - 1])
 
     def get_move(self, board, score, turns_alive, turns_to_starve, direction, head_position, body_parts):
         # model initialisation
-        global start
+        global model
         global score_internal
+        global start
+
+        if score != score_internal:
+            # Found the food! reset internal data by calling on_die
+            self.on_die(head_position, board, score, body_parts)
+
+        #for y in range(0, 5):
+        #    print(str(str(model[0][y]) + "     ")[:6] + " " + str(str(model[1][y]) + "     ")[:6] + " " +
+        #          str(str(model[2][y]) + "     ")[:6] + " " + str(str(model[3][y]) + "     ")[:6] + " " +
+        #          str(str(model[4][y]) + "     ")[:6])
+        #print()
+
         if start:
             self.find_game_elements(board)
-            print("[AGENT]: Model - " + str(model))
+        #    print("[AGENT]: Model - " + str(model))
             start = False
         self.update_rewards()
-        possible_moves = self.get_neighbour_rewards(head_position)
+        possible_moves = self.get_neighbour_rewards(head_position, True)
+        #print("[AGENT]: neighbour reward NORTH: " + str(possible_moves[3]))
+        #print("[AGENT]: neighbour reward EAST: " + str(possible_moves[1]))
+        #print("[AGENT]: neighbour reward SOUTH: " + str(possible_moves[2]))
+        #print("[AGENT]: neighbour reward WEST: " + str(possible_moves[0]))
+        #print()
         """ get_neighbour_rewards returns possible moves as follows:
             possible_moves[0] : WEST direction
             possible_moves[1] : EAST direction
             possible_moves[2] : SOUTH direction
             possible_moves[3] : NORTH direction"""
+        possible_moves = list(possible_moves)
         while True:
-            if max(possible_moves) == possible_moves[0]:
+            if len(possible_moves) == 1:
+                break
+            if max(possible_moves[0], possible_moves[1], possible_moves[2], possible_moves[3]) == possible_moves[0]:
                 # GO WEST
                 if direction == Direction.NORTH:
                     return Move.LEFT
                 elif direction == Direction.EAST:
-                    #to avoid loops, pop west from possible_moves
-                    possible_moves.remove(possible_moves[0])
+                    possible_moves[0] = -1000
                     continue
                 elif direction == Direction.SOUTH:
                     return Move.RIGHT
                 else:
                     return Move.STRAIGHT
-            elif max(possible_moves) == possible_moves[1]:
+            elif max(possible_moves[0], possible_moves[1], possible_moves[2], possible_moves[3]) == possible_moves[1]:
                 # GO EAST
                 if direction == Direction.NORTH:
                     return Move.RIGHT
@@ -152,12 +181,12 @@ class Agent:
                 elif direction == Direction.SOUTH:
                     return Move.LEFT
                 else:
-                    possible_moves.remove(possible_moves[1])
+                    possible_moves[1] = -1000
                     continue
-            elif max(possible_moves) == possible_moves[2]:
+            elif max(possible_moves[0], possible_moves[1], possible_moves[2], possible_moves[3]) == possible_moves[2]:
                 #GO SOUTH
                 if direction == Direction.NORTH:
-                    possible_moves.remove(possible_moves[2])
+                    possible_moves[2] = -1000
                     continue
                 elif direction == Direction.EAST:
                     return Move.RIGHT
@@ -172,51 +201,11 @@ class Agent:
                 elif direction == Direction.EAST:
                     return Move.LEFT
                 elif direction == Direction.SOUTH:
-                    possible_moves.remove(possible_moves[3])
-                    continue
+                    possible_moves[3] = -1000
                 else:
                     return Move.RIGHT
+        # for now...
         return Move.STRAIGHT
-        """This function behaves as the 'brain' of the snake. You only need to change the code in this function for
-        the project. Every turn the agent needs to return a move. This move will be executed by the snake. If this
-        functions fails to return a valid return (see return), the snake will die (as this confuses its tiny brain
-        that much that it will explode). The starting direction of the snake will be North.
-
-        :param board: A two dimensional array representing the current state of the board. The upper left most
-        coordinate is equal to (0,0) and each coordinate (x,y) can be accessed by executing board[x][y]. At each
-        coordinate a GameObject is present. This can be either GameObject.EMPTY (meaning there is nothing at the
-        given coordinate), GameObject.FOOD (meaning there is food at the given coordinate), GameObject.WALL (meaning
-        there is a wall at the given coordinate. TIP: do not run into them), GameObject.SNAKE_HEAD (meaning the head
-        of the snake is located there) and GameObject.SNAKE_BODY (meaning there is a body part of the snake there.
-        TIP: also, do not run into these). The snake will also die when it tries to escape the board (moving out of
-        the boundaries of the array)
-
-        :param score: The current score as an integer. Whenever the snake eats, the score will be increased by one.
-        When the snake tragically dies (i.e. by running its head into a wall) the score will be reset. In ohter
-        words, the score describes the score of the current (alive) worm.
-
-        :param turns_alive: The number of turns (as integer) the current snake is alive.
-
-        :param turns_to_starve: The number of turns left alive (as integer) if the snake does not eat. If this number
-        reaches 1 and there is not eaten the next turn, the snake dies. If the value is equal to -1, then the option
-        is not enabled and the snake can not starve.
-
-        :param direction: The direction the snake is currently facing. This can be either Direction.NORTH,
-        Direction.SOUTH, Direction.WEST, Direction.EAST. For instance, when the snake is facing east and a move
-        straight is returned, the snake wil move one cell to the right.
-
-        :param head_position: (x,y) of the head of the snake. The following should always hold: board[head_position[
-        0]][head_position[1]] == GameObject.SNAKE_HEAD.
-
-        :param body_parts: the array of the locations of the body parts of the snake. The last element of this array
-        represents the tail and the first element represents the body part directly following the head of the snake.
-
-        :return: The move of the snake. This can be either Move.LEFT (meaning going left), Move.STRAIGHT (meaning
-        going straight ahead) and Move.RIGHT (meaning going right). The moves are made from the viewpoint of the
-        snake. This means the snake keeps track of the direction it is facing (North, South, West and East).
-        Move.LEFT and Move.RIGHT changes the direction of the snake. In example, if the snake is facing north and the
-        move left is made, the snake will go one block to the left and change its direction to west.
-        """
 
     def should_redraw_board(self):
         """
@@ -238,6 +227,12 @@ class Agent:
         return False
 
     def on_die(self, head_position, board, score, body_parts):
+        global start
+        global model
+        global foodposition
+        global wallposition
+        global score_internal
+        global step
         """This function will be called whenever the snake dies. After its dead the snake will be reincarnated into a
         new snake and its life will start over. This means that the next time the get_move function is called,
         it will be called for a fresh snake. Use this function to clean up variables specific to the life of a single
@@ -254,3 +249,12 @@ class Agent:
         represents the tail and the first element represents the body part directly following the head of the snake.
         When the snake runs in its own body the following holds: head_position in body_parts.
         """
+
+        print("!!! --- !!! --- SCORE: " + str(score) + " --- !!! --- !!!")
+
+        start = True
+        score_internal = score
+        model = [[0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0]]
+        foodposition = [0, 0]
+        wallposition = [0, 0]
+        step = 0
