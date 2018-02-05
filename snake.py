@@ -41,6 +41,8 @@ class Snake:
         self.x += manipulation[0]
         self.y += manipulation[1]
 
+        # print("Snake:", (self.x, self.y))
+
         # check if died
         if self.died(board):
             return True

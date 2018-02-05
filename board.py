@@ -19,8 +19,10 @@ class Board:
             for i in range(nr_walls):
                 self.spawn_wall()
         else:
-            self.set_game_object_at(7, 5, GameObject.WALL)
-            self.set_game_object_at(15, 8, GameObject.WALL)
+            pass
+            # for i in range(3, 22):
+            #     self.set_game_object_at(i, 13, GameObject.WALL)
+            #     self.set_game_object_at(13, i, GameObject.WALL)
 
         for i in range(max_nr_food):
             self.spawn_new_food()
